@@ -1,137 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>لعبة صيد السمك</title>
+  <meta charset="utf-8" />
+  <title>Fish Catch Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(#87ceeb, #006994);
-      overflow: hidden;
-      font-family: Arial, sans-serif;
+    :root{--hud-gap:12px}
+    html,body{height:100%;margin:0;padding:0}
+    body{
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(#87ceeb,#006994);
+      overflow:hidden;
     }
 
-    #gameArea {
-      width: 100%;
-      height: 100vh;
-      position: relative;
+    #gameArea{
+      position:relative;
+      width:100%;
+      height:100vh;
+      touch-action: none; /* disable double-tap zoom */
     }
 
-    #basket {
-      width: 120px;
-      height: 90px;
+    #basket{
+      position:absolute;
+      bottom:20px;
+      left:50%;
+      transform:translateX(-50%);
+      width:120px;
+      height:90px;
       background: url("basket.png") no-repeat center/cover;
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
+      will-change: transform, left;
     }
 
-    .fish {
-      width: 80px;
-      height: 60px;
+    .fish{
+      position:absolute;
+      top:0;
+      width:80px;
+      height:60px;
       background: url("fish.png") no-repeat center/cover;
-      position: absolute;
-      top: 0;
     }
 
-    #scoreBoard {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      font-size: 22px;
-      font-weight: bold;
-      color: white;
-      text-shadow: 2px 2px 5px black;
-    }
+    /* HUD */
+    #scoreBoard{position:absolute;left:var(--hud-gap);top:var(--hud-gap);color:#fff;font-weight:700;text-shadow:0 2px 4px #000;padding:2px 6px;font-size:18px}
+    #highScoreBoard{position:absolute;left:var(--hud-gap);top:46px;color:gold;font-weight:700;text-shadow:0 2px 4px #000;padding:2px 6px;font-size:16px}
+    #speedBoard{position:absolute;right:var(--hud-gap);top:var(--hud-gap);color:#fff;font-weight:700;text-shadow:0 2px 4px #000;padding:2px 6px;font-size:18px}
 
-    #highScoreBoard {
-      position: absolute;
-      top: 45px;
-      left: 10px;
-      font-size: 20px;
-      font-weight: bold;
-      color: gold;
-      text-shadow: 2px 2px 5px black;
-    }
+    #countdown{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:72px;font-weight:900;color:yellow;text-shadow:3px 3px 10px #000;display:none}
 
-    #speedBoard {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 22px;
-      font-weight: bold;
-      color: white;
-      text-shadow: 2px 2px 5px black;
+    #startBtn,#restartBtn{
+      position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+      padding:12px 22px;font-size:20px;border-radius:10px;border:none;background:#ffcc00;cursor:pointer;
     }
+    #restartBtn{display:none}
 
-    #countdown {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 70px;
-      font-weight: bold;
-      color: yellow;
-      text-shadow: 3px 3px 8px black;
-      display: none;
-    }
-
-    #startBtn, #restartBtn {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 15px 30px;
-      font-size: 24px;
-      font-weight: bold;
-      border: none;
-      border-radius: 10px;
-      background: #ffcc00;
-      cursor: pointer;
-    }
-
-    #restartBtn {
-      display: none;
-    }
-
-    #controls {
-      position: absolute;
-      bottom: 30px;
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      padding: 0 40px;
-    }
-
-    #controls button {
-      width: 80px;
-      height: 80px;
-      font-size: 30px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(255, 255, 255, 0.7);
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-      cursor: pointer;
-    }
+    #hintTouch{position:absolute;left:50%;bottom:120px;transform:translateX(-50%);color:#fff;opacity:.7;font-size:14px}
+    @media (min-width:800px){#hintTouch{display:none}}
   </style>
 </head>
 <body>
   <div id="gameArea">
     <div id="basket"></div>
+
     <div id="scoreBoard">Score: 0</div>
     <div id="highScoreBoard">High Score: 0</div>
     <div id="speedBoard">Speed: x1</div>
-    <div id="countdown"></div>
-    <button id="startBtn">ابدأ اللعبة</button>
-    <button id="restartBtn">إعادة اللعب</button>
 
-    <!-- أزرار الموبايل -->
-    <div id="controls">
-      <button id="leftBtn">⬅️</button>
-      <button id="rightBtn">➡️</button>
-    </div>
+    <div id="countdown"></div>
+    <button id="startBtn">Start Game</button>
+    <button id="restartBtn">Restart</button>
+
+    <div id="hintTouch">Touch and drag to move the basket</div>
   </div>
 
   <script>
@@ -143,148 +80,124 @@
     const countdown = document.getElementById("countdown");
     const startBtn = document.getElementById("startBtn");
     const restartBtn = document.getElementById("restartBtn");
-    const leftBtn = document.getElementById("leftBtn");
-    const rightBtn = document.getElementById("rightBtn");
 
+    let basketWidth = basket.offsetWidth;
     let score = 0;
-    let highScore = localStorage.getItem("highScore") || 0;
-    let speed = 6; // سرعة البداية
+    let highScore = 0;
     let speedMultiplier = 1;
     let gameInterval;
+    let fishInterval;
     let isPlaying = false;
 
-    highScoreBoard.textContent = "High Score: " + highScore;
-
-    // تحريك سلس للباسكت
-    let moveLeft = false;
-    let moveRight = false;
-    let basketSpeed = 10; // سرعة الحركة
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowLeft") moveLeft = true;
-      if (e.key === "ArrowRight") moveRight = true;
-    });
-
-    document.addEventListener("keyup", (e) => {
-      if (e.key === "ArrowLeft") moveLeft = false;
-      if (e.key === "ArrowRight") moveRight = false;
-    });
-
-    // أزرار الموبايل
-    leftBtn.addEventListener("touchstart", () => moveLeft = true);
-    leftBtn.addEventListener("touchend", () => moveLeft = false);
-    rightBtn.addEventListener("touchstart", () => moveRight = true);
-    rightBtn.addEventListener("touchend", () => moveRight = false);
-
-    function moveBasket() {
-      const basketRect = basket.getBoundingClientRect();
-
-      if (moveLeft && basketRect.left > 0) {
-        basket.style.left = basket.offsetLeft - basketSpeed + "px";
-      }
-      if (moveRight && basketRect.right < window.innerWidth) {
-        basket.style.left = basket.offsetLeft + basketSpeed + "px";
-      }
-
-      requestAnimationFrame(moveBasket);
+    function updateBasketPosition(x) {
+      let newLeft = x - basketWidth / 2;
+      if (newLeft < 0) newLeft = 0;
+      if (newLeft > gameArea.offsetWidth - basketWidth) newLeft = gameArea.offsetWidth - basketWidth;
+      basket.style.left = newLeft + "px";
     }
-    moveBasket();
 
-    // بدء اللعبة
-    startBtn.addEventListener("click", () => {
+    // Touch control
+    gameArea.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      let touch = e.touches[0];
+      updateBasketPosition(touch.clientX);
+    }, {passive:false});
+
+    gameArea.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+      let touch = e.touches[0];
+      updateBasketPosition(touch.clientX);
+    }, {passive:false});
+
+    // Mouse control
+    document.addEventListener("mousemove", (e) => {
+      updateBasketPosition(e.clientX);
+    });
+
+    function startGame() {
+      score = 0;
+      speedMultiplier = 1;
+      scoreBoard.textContent = "Score: " + score;
+      highScoreBoard.textContent = "High Score: " + highScore;
+      speedBoard.textContent = "Speed: x" + speedMultiplier;
+
       startBtn.style.display = "none";
-      startCountdown();
-    });
-
-    restartBtn.addEventListener("click", () => {
       restartBtn.style.display = "none";
-      startCountdown();
-    });
 
-    function startCountdown() {
       let count = 3;
       countdown.style.display = "block";
       countdown.textContent = count;
-
-      const countDownTimer = setInterval(() => {
+      let countdownInterval = setInterval(() => {
         count--;
         if (count > 0) {
           countdown.textContent = count;
         } else {
-          clearInterval(countDownTimer);
+          clearInterval(countdownInterval);
           countdown.style.display = "none";
-          startGame();
+          isPlaying = true;
+          gameInterval = setInterval(updateGame, 20);
+          fishInterval = setInterval(createFish, 1500);
         }
       }, 1000);
-    }
-
-    function startGame() {
-      isPlaying = true;
-      score = 0;
-      speed = 6;
-      speedMultiplier = 1;
-      scoreBoard.textContent = "Score: " + score;
-      speedBoard.textContent = "Speed: x" + speedMultiplier;
-
-      gameInterval = setInterval(spawnFish, 1200);
-    }
-
-    function spawnFish() {
-      if (!isPlaying) return;
-
-      const fish = document.createElement("div");
-      fish.classList.add("fish");
-      fish.style.left = Math.random() * (window.innerWidth - 80) + "px";
-      gameArea.appendChild(fish);
-
-      let fallInterval = setInterval(() => {
-        if (!isPlaying) {
-          fish.remove();
-          clearInterval(fallInterval);
-          return;
-        }
-
-        let fishTop = fish.offsetTop;
-        if (fishTop > window.innerHeight - 120) {
-          const fishRect = fish.getBoundingClientRect();
-          const basketRect = basket.getBoundingClientRect();
-
-          if (fishRect.left < basketRect.right && fishRect.right > basketRect.left) {
-            updateScore();
-            fish.remove();
-            clearInterval(fallInterval);
-          } else {
-            // Game Over
-            endGame();
-            fish.remove();
-            clearInterval(fallInterval);
-          }
-        } else {
-          fish.style.top = fishTop + speed + "px";
-        }
-      }, 30);
-    }
-
-    function updateScore() {
-      score++;
-      scoreBoard.textContent = "Score: " + score;
-
-      if (score > highScore) {
-        highScore = score;
-        localStorage.setItem("highScore", highScore);
-        highScoreBoard.textContent = "High Score: " + highScore;
-      }
-
-      speedMultiplier++;
-      speed += 1.5;
-      speedBoard.textContent = "Speed: x" + speedMultiplier;
     }
 
     function endGame() {
       isPlaying = false;
       clearInterval(gameInterval);
+      clearInterval(fishInterval);
+
+      document.querySelectorAll(".fish").forEach(f => f.remove());
+
       restartBtn.style.display = "block";
+
+      if (score > highScore) {
+        highScore = score;
+      }
     }
+
+    function updateGame() {
+      let fishes = document.querySelectorAll(".fish");
+      fishes.forEach(fish => {
+        let top = parseInt(fish.style.top);
+        fish.style.top = top + (2 * speedMultiplier) + "px";
+
+        if (isColliding(fish, basket)) {
+          fish.remove();
+          score++;
+          scoreBoard.textContent = "Score: " + score;
+
+          if (score % 5 === 0) {
+            speedMultiplier++;
+            speedBoard.textContent = "Speed: x" + speedMultiplier;
+          }
+        } else if (top > gameArea.offsetHeight) {
+          endGame();
+        }
+      });
+    }
+
+    function createFish() {
+      let fish = document.createElement("div");
+      fish.className = "fish";
+      fish.style.left = Math.random() * (gameArea.offsetWidth - 80) + "px";
+      fish.style.top = "0px";
+      gameArea.appendChild(fish);
+    }
+
+    function isColliding(a, b) {
+      let aRect = a.getBoundingClientRect();
+      let bRect = b.getBoundingClientRect();
+      return !(
+        aRect.top > bRect.bottom ||
+        aRect.bottom < bRect.top ||
+        aRect.right < bRect.left ||
+        aRect.left > bRect.right
+      );
+    }
+
+    startBtn.addEventListener("click", startGame);
+    restartBtn.addEventListener("click", startGame);
   </script>
 </body>
 </html>
+
