@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>لعبة صيد السمك</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(#87ceeb, #006994);
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    #gameArea {
+      width: 100%;
+      height: 100vh;
+      position: relative;
+    }
+
+    #basket {
+      width: 120px;
+      height: 90px;
+      background: url("basket.png") no-repeat center/cover;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .fish {
+      width: 80px;
+      height: 60px;
+      background: url("fish.png") no-repeat center/cover;
+      position: absolute;
+      top: 0;
+    }
+
+    #scoreBoard {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 22px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 2px 2px 5px black;
+    }
+
+    #highScoreBoard {
+      position: absolute;
+      top: 45px;
+      left: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      color: gold;
+      text-shadow: 2px 2px 5px black;
+    }
+
+    #speedBoard {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 22px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 2px 2px 5px black;
+    }
+
+    #countdown {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 70px;
+      font-weight: bold;
+      color: yellow;
+      text-shadow: 3px 3px 8px black;
+      display: none;
+    }
+
+    #startBtn, #restartBtn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 15px 30px;
+      font-size: 24px;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      background: #ffcc00;
+      cursor: pointer;
+    }
+
+    #restartBtn {
+      display: none;
+    }
+
+    #controls {
+      position: absolute;
+      bottom: 30px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 40px;
+    }
+
+    #controls button {
+      width: 80px;
+      height: 80px;
+      font-size: 30px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.7);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameArea">
+    <div id="basket"></div>
+    <div id="scoreBoard">Score: 0</div>
+    <div id="highScoreBoard">High Score: 0</div>
+    <div id="speedBoard">Speed: x1</div>
+    <div id="countdown"></div>
+    <button id="startBtn">ابدأ اللعبة</button>
+    <button id="restartBtn">إعادة اللعب</button>
+
+    <!-- أزرار الموبايل -->
+    <div id="controls">
+      <button id="leftBtn">⬅️</button>
+      <button id="rightBtn">➡️</button>
+    </div>
+  </div>
+
+  <script>
+    const gameArea = document.getElementById("gameArea");
+    const basket = document.getElementById("basket");
+    const scoreBoard = document.getElementById("scoreBoard");
+    const highScoreBoard = document.getElementById("highScoreBoard");
+    const speedBoard = document.getElementById("speedBoard");
+    const countdown = document.getElementById("countdown");
+    const startBtn = document.getElementById("startBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const leftBtn = document.getElementById("leftBtn");
+    const rightBtn = document.getElementById("rightBtn");
+
+    let score = 0;
+    let highScore = localStorage.getItem("highScore") || 0;
+    let speed = 6; // سرعة البداية
+    let speedMultiplier = 1;
+    let gameInterval;
+    let isPlaying = false;
+
+    highScoreBoard.textContent = "High Score: " + highScore;
+
+    // تحريك سلس للباسكت
+    let moveLeft = false;
+    let moveRight = false;
+    let basketSpeed = 10; // سرعة الحركة
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") moveLeft = true;
+      if (e.key === "ArrowRight") moveRight = true;
+    });
+
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "ArrowLeft") moveLeft = false;
+      if (e.key === "ArrowRight") moveRight = false;
+    });
+
+    // أزرار الموبايل
+    leftBtn.addEventListener("touchstart", () => moveLeft = true);
+    leftBtn.addEventListener("touchend", () => moveLeft = false);
+    rightBtn.addEventListener("touchstart", () => moveRight = true);
+    rightBtn.addEventListener("touchend", () => moveRight = false);
+
+    function moveBasket() {
+      const basketRect = basket.getBoundingClientRect();
+
+      if (moveLeft && basketRect.left > 0) {
+        basket.style.left = basket.offsetLeft - basketSpeed + "px";
+      }
+      if (moveRight && basketRect.right < window.innerWidth) {
+        basket.style.left = basket.offsetLeft + basketSpeed + "px";
+      }
+
+      requestAnimationFrame(moveBasket);
+    }
+    moveBasket();
+
+    // بدء اللعبة
+    startBtn.addEventListener("click", () => {
+      startBtn.style.display = "none";
+      startCountdown();
+    });
+
+    restartBtn.addEventListener("click", () => {
+      restartBtn.style.display = "none";
+      startCountdown();
+    });
+
+    function startCountdown() {
+      let count = 3;
+      countdown.style.display = "block";
+      countdown.textContent = count;
+
+      const countDownTimer = setInterval(() => {
+        count--;
+        if (count > 0) {
+          countdown.textContent = count;
+        } else {
+          clearInterval(countDownTimer);
+          countdown.style.display = "none";
+          startGame();
+        }
+      }, 1000);
+    }
+
+    function startGame() {
+      isPlaying = true;
+      score = 0;
+      speed = 6;
+      speedMultiplier = 1;
+      scoreBoard.textContent = "Score: " + score;
+      speedBoard.textContent = "Speed: x" + speedMultiplier;
+
+      gameInterval = setInterval(spawnFish, 1200);
+    }
+
+    function spawnFish() {
+      if (!isPlaying) return;
+
+      const fish = document.createElement("div");
+      fish.classList.add("fish");
+      fish.style.left = Math.random() * (window.innerWidth - 80) + "px";
+      gameArea.appendChild(fish);
+
+      let fallInterval = setInterval(() => {
+        if (!isPlaying) {
+          fish.remove();
+          clearInterval(fallInterval);
+          return;
+        }
+
+        let fishTop = fish.offsetTop;
+        if (fishTop > window.innerHeight - 120) {
+          const fishRect = fish.getBoundingClientRect();
+          const basketRect = basket.getBoundingClientRect();
+
+          if (fishRect.left < basketRect.right && fishRect.right > basketRect.left) {
+            updateScore();
+            fish.remove();
+            clearInterval(fallInterval);
+          } else {
+            // Game Over
+            endGame();
+            fish.remove();
+            clearInterval(fallInterval);
+          }
+        } else {
+          fish.style.top = fishTop + speed + "px";
+        }
+      }, 30);
+    }
+
+    function updateScore() {
+      score++;
+      scoreBoard.textContent = "Score: " + score;
+
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("highScore", highScore);
+        highScoreBoard.textContent = "High Score: " + highScore;
+      }
+
+      speedMultiplier++;
+      speed += 1.5;
+      speedBoard.textContent = "Speed: x" + speedMultiplier;
+    }
+
+    function endGame() {
+      isPlaying = false;
+      clearInterval(gameInterval);
+      restartBtn.style.display = "block";
+    }
+  </script>
+</body>
+</html>
